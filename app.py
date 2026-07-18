@@ -37,6 +37,7 @@ def on_startup() -> None:
 class ChatRequest(BaseModel):
     session_id: int
     message: str
+    api_key: str | None = None
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -101,7 +102,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
     previous_messages = list(session.messages)
 
     try:
-        answer = generate_response(payload.message, previous_messages)
+        answer = generate_response(payload.message, previous_messages, payload.api_key)
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 

@@ -4,7 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MediBuddy | AI Medical Chatbot</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  
+  <!-- Google Fonts: Outfit for Headings, Inter for Body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}" />
 </head>
 <body>
   <div class="app">
@@ -70,6 +76,17 @@
     </main>
   </div>
 
-  <script src="/static/script.js"></script>
+  <!-- API Key Modal -->
+  <div id="apiKeyModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Enter your Groq API Key</h2>
+      <p>To use MediBuddy, please provide your Groq API key.</p>
+      <input type="password" id="apiKeyInput" placeholder="gsk_..." />
+      <button id="saveApiKeyBtn" class="save-btn">Save Key</button>
+      <p class="modal-help">Get a free key from <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a></p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', path='script.js') }}"></script>
 </body>
 </html>

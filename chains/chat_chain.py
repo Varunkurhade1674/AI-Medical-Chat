@@ -18,12 +18,12 @@ from chains.prompt import medical_prompt
 from chains.memory import build_memory_from_history, format_history_as_text
 
 
-def get_llm() -> ChatGroq:
+def get_llm(api_key: str | None = None) -> ChatGroq:
     """Build a configured ChatGroq client using Llama 3.3."""
-    api_key = os.getenv("GROQ_API_KEY")
+    api_key = api_key or os.getenv("GROQ_API_KEY")
     if not api_key:
         raise RuntimeError(
-            "GROQ_API_KEY is not set. Add it to your .env file (see .env.example)."
+            "GROQ_API_KEY is not set. Please provide it in the UI or add it to your .env file."
         )
 
     return ChatGroq(
@@ -34,14 +34,14 @@ def get_llm() -> ChatGroq:
     )
 
 
-def build_chain():
+def build_chain(api_key: str | None = None):
     """Compose the RunnableSequence: PromptTemplate | ChatGroq | StrOutputParser."""
-    llm = get_llm()
+    llm = get_llm(api_key)
     parser = StrOutputParser()
     return medical_prompt | llm | parser
 
 
-def generate_response(question: str, previous_messages: list) -> str:
+def generate_response(question: str, previous_messages: list, api_key: str | None = None) -> str:
     """
     Run the chain for a single user question, given the prior messages for
     this session pulled from the database.
@@ -49,7 +49,7 @@ def generate_response(question: str, previous_messages: list) -> str:
     memory = build_memory_from_history(previous_messages)
     chat_history_text = format_history_as_text(memory)
 
-    chain = build_chain()
+    chain = build_chain(api_key)
 
     try:
         answer = chain.invoke({"chat_history": chat_history_text, "question": question})
