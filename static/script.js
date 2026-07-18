@@ -10,7 +10,15 @@ const newChatBtn = document.getElementById("newChatBtn");
 const typingIndicator = document.getElementById("typingIndicator");
 const chatTitle = document.getElementById("chatTitle");
 
+const onboardingModal = document.getElementById("onboardingModal");
+const apiKeyInput = document.getElementById("apiKeyInput");
+const startChatBtn = document.getElementById("startChatBtn");
+const providerRadios = document.querySelectorAll('input[name="aiProvider"]');
+const keyHelpText = document.getElementById("keyHelpText");
+
 let currentSessionId = null;
+let savedProvider = localStorage.getItem("ai_provider") || "groq";
+let savedApiKey = localStorage.getItem("api_key") || "";
 
 // ---------------------------------------------------------------------------
 // Session list
@@ -147,7 +155,12 @@ async function sendMessage() {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: currentSessionId, message: text }),
+      body: JSON.stringify({ 
+        session_id: currentSessionId, 
+        message: text,
+        provider: savedProvider,
+        api_key: savedApiKey
+      }),
     });
 
     if (!res.ok) {
@@ -203,7 +216,60 @@ messageInput.addEventListener("keydown", (e) => {
 });
 
 // ---------------------------------------------------------------------------
+// Onboarding Logic
+// ---------------------------------------------------------------------------
+
+function updateHelpText() {
+  const provider = document.querySelector('input[name="aiProvider"]:checked').value;
+  if (provider === "groq") {
+    keyHelpText.innerHTML = 'Get a free key from <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a>';
+  } else if (provider === "openai") {
+    keyHelpText.innerHTML = 'Get a key from <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>';
+  } else if (provider === "google") {
+    keyHelpText.innerHTML = 'Get a key from <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>';
+  }
+}
+
+providerRadios.forEach(radio => {
+  radio.addEventListener("change", updateHelpText);
+});
+
+startChatBtn.addEventListener("click", () => {
+  const key = apiKeyInput.value.trim();
+  if (!key) {
+    alert("Please enter an API key to continue.");
+    return;
+  }
+  
+  const provider = document.querySelector('input[name="aiProvider"]:checked').value;
+  
+  localStorage.setItem("api_key", key);
+  localStorage.setItem("ai_provider", provider);
+  
+  savedApiKey = key;
+  savedProvider = provider;
+  
+  onboardingModal.classList.add("hidden");
+  loadSessions();
+});
+
+function initOnboarding() {
+  if (!savedApiKey) {
+    onboardingModal.classList.remove("hidden");
+    
+    // Set radio to saved provider if it exists
+    const radio = document.querySelector(`input[name="aiProvider"][value="${savedProvider}"]`);
+    if (radio) {
+      radio.checked = true;
+      updateHelpText();
+    }
+  } else {
+    loadSessions();
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------------
 
-loadSessions();
+initOnboarding();

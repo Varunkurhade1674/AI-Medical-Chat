@@ -1,38 +1,27 @@
 """
-Conversation memory utilities built on LangChain's ConversationBufferMemory.
+Conversation memory utilities.
 
-Because each FastAPI request is stateless, we rebuild a ConversationBufferMemory
-from the messages already stored in SQLite, rather than keeping memory alive
-in server RAM. This keeps LangChain's memory abstraction in the loop while
-still giving us durable, reloadable chat history.
+Because each FastAPI request is stateless, we reconstruct the chat history
+as a single plain-text block from the messages already stored in SQLite.
+This provides the `{chat_history}` expected by our PromptTemplate.
 """
-from langchain.memory import ConversationBufferMemory
 
-
-def build_memory_from_history(messages: list) -> ConversationBufferMemory:
+def build_memory_from_history(messages: list) -> list:
     """
-    Reconstruct a ConversationBufferMemory instance from stored DB messages.
-
-    `messages` is expected to be a list of ORM Message objects (or anything
-    with `.role` and `.message` attributes), ordered oldest to newest.
+    We no longer use LangChain's ConversationBufferMemory because it was moved/removed 
+    in recent LangChain versions. Instead, we just pass the messages list directly.
     """
-    memory = ConversationBufferMemory(
-        memory_key="chat_history",
-        return_messages=False,
-        input_key="question",
-    )
-
-    for msg in messages:
-        if msg.role == "user":
-            memory.chat_memory.add_user_message(msg.message)
-        else:
-            memory.chat_memory.add_ai_message(msg.message)
-
-    return memory
+    return messages
 
 
-def format_history_as_text(memory: ConversationBufferMemory) -> str:
+def format_history_as_text(messages: list) -> str:
     """Return the buffered conversation as a single plain-text block."""
-    variables = memory.load_memory_variables({})
-    history = variables.get("chat_history", "")
-    return history if history else "This is the beginning of the conversation."
+    if not messages:
+        return "This is the beginning of the conversation."
+        
+    formatted = []
+    for msg in messages:
+        prefix = "Human: " if msg.role == "user" else "AI: "
+        formatted.append(f"{prefix}{msg.message}")
+        
+    return "\n".join(formatted)

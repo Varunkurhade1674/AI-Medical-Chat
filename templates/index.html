@@ -76,14 +76,45 @@
     </main>
   </div>
 
-  <!-- API Key Modal -->
-  <div id="apiKeyModal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Enter your Groq API Key</h2>
-      <p>To use MediBuddy, please provide your Groq API key.</p>
-      <input type="password" id="apiKeyInput" placeholder="gsk_..." />
-      <button id="saveApiKeyBtn" class="save-btn">Save Key</button>
-      <p class="modal-help">Get a free key from <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a></p>
+  <!-- Onboarding Modal -->
+  <div id="onboardingModal" class="modal hidden">
+    <div class="modal-content onboarding-card">
+      <div class="onboarding-header">
+        <div class="logo-icon">⚕</div>
+        <h2>Welcome to MediBuddy</h2>
+        <p>Please select your preferred AI provider and enter its API key to get started.</p>
+      </div>
+      
+      <div class="provider-selection">
+        <label class="provider-option">
+          <input type="radio" name="aiProvider" value="groq" checked>
+          <div class="provider-card">
+            <span class="provider-name">Groq</span>
+            <span class="provider-model">Llama 3.3 (Fast)</span>
+          </div>
+        </label>
+        <label class="provider-option">
+          <input type="radio" name="aiProvider" value="openai">
+          <div class="provider-card">
+            <span class="provider-name">OpenAI</span>
+            <span class="provider-model">GPT-4o mini</span>
+          </div>
+        </label>
+        <label class="provider-option">
+          <input type="radio" name="aiProvider" value="google">
+          <div class="provider-card">
+            <span class="provider-name">Google</span>
+            <span class="provider-model">Gemini 1.5 Flash</span>
+          </div>
+        </label>
+      </div>
+
+      <input type="password" id="apiKeyInput" placeholder="Enter API Key here..." />
+      <button id="startChatBtn" class="save-btn">Start Chatting</button>
+      
+      <p class="modal-help" id="keyHelpText">
+        Get a free key from <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a>
+      </p>
     </div>
   </div>
 

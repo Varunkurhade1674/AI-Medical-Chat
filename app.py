@@ -37,6 +37,7 @@ def on_startup() -> None:
 class ChatRequest(BaseModel):
     session_id: int
     message: str
+    provider: str = "groq"
     api_key: str | None = None
 
 
@@ -102,7 +103,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
     previous_messages = list(session.messages)
 
     try:
-        answer = generate_response(payload.message, previous_messages, payload.api_key)
+        answer = generate_response(payload.message, previous_messages, payload.api_key, payload.provider)
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 
@@ -124,4 +125,4 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("app:app", host="127.0.0.1", port=8080, reload=True)
