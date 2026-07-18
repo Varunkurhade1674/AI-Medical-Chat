@@ -107,10 +107,22 @@
             <span class="provider-model">Gemini 1.5 Flash</span>
           </div>
         </label>
+        <label class="provider-option">
+          <input type="radio" name="aiProvider" value="openrouter">
+          <div class="provider-card">
+            <span class="provider-name">OpenRouter</span>
+            <span class="provider-model">Llama 3.1 8B</span>
+          </div>
+        </label>
       </div>
 
       <input type="password" id="apiKeyInput" placeholder="Enter API Key here..." />
-      <button id="startChatBtn" class="save-btn">Start Chatting</button>
+      <div id="verifyError" class="verify-error hidden"></div>
+      
+      <button id="startChatBtn" class="save-btn">
+        <span class="btn-text">Start Chatting</span>
+        <span class="btn-spinner hidden">↻</span>
+      </button>
       
       <p class="modal-help" id="keyHelpText">
         Get a free key from <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a>

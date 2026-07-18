@@ -41,6 +41,14 @@ def get_llm(api_key: str | None = None, provider: str = "groq"):
             temperature=0.4,
             max_tokens=800,
         )
+    elif provider == "openrouter":
+        return ChatOpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key,
+            model="meta-llama/llama-3.1-8b-instruct",
+            temperature=0.4,
+            max_tokens=800,
+        )
     else:
         return ChatGroq(
             api_key=api_key,

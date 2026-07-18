@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from database.database import init_db, get_db
 from database.models import ChatSession, Message
-from chains.chat_chain import generate_response
+from chains.chat_chain import generate_response, get_llm
 
 load_dotenv()
 
@@ -39,6 +39,22 @@ class ChatRequest(BaseModel):
     message: str
     provider: str = "groq"
     api_key: str | None = None
+
+
+class VerifyRequest(BaseModel):
+    provider: str
+    api_key: str
+
+
+@app.post("/api/verify")
+def verify_api_key(payload: VerifyRequest):
+    try:
+        llm = get_llm(payload.api_key, payload.provider)
+        # We invoke the LLM with a tiny request to verify credentials
+        llm.invoke("Respond with the exact word 'OK'.")
+        return {"status": "success"}
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail=str(exc))
 
 
 @app.get("/", response_class=HTMLResponse)

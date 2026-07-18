@@ -227,6 +227,8 @@ function updateHelpText() {
     keyHelpText.innerHTML = 'Get a key from <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>';
   } else if (provider === "google") {
     keyHelpText.innerHTML = 'Get a key from <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>';
+  } else if (provider === "openrouter") {
+    keyHelpText.innerHTML = 'Get a key from <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai</a>';
   }
 }
 
@@ -234,23 +236,55 @@ providerRadios.forEach(radio => {
   radio.addEventListener("change", updateHelpText);
 });
 
-startChatBtn.addEventListener("click", () => {
+startChatBtn.addEventListener("click", async () => {
   const key = apiKeyInput.value.trim();
+  const errorDiv = document.getElementById("verifyError");
+  const btnText = startChatBtn.querySelector(".btn-text");
+  const spinner = startChatBtn.querySelector(".btn-spinner");
+  
   if (!key) {
-    alert("Please enter an API key to continue.");
+    errorDiv.textContent = "Please enter an API key to continue.";
+    errorDiv.classList.remove("hidden");
     return;
   }
   
   const provider = document.querySelector('input[name="aiProvider"]:checked').value;
   
-  localStorage.setItem("api_key", key);
-  localStorage.setItem("ai_provider", provider);
+  // UI Loading State
+  errorDiv.classList.add("hidden");
+  startChatBtn.disabled = true;
+  btnText.textContent = "Verifying...";
+  spinner.classList.remove("hidden");
   
-  savedApiKey = key;
-  savedProvider = provider;
-  
-  onboardingModal.classList.add("hidden");
-  loadSessions();
+  try {
+    const res = await fetch("/api/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: provider, api_key: key })
+    });
+    
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to verify API key. Please check it and try again.");
+    }
+    
+    // Verification successful
+    localStorage.setItem("api_key", key);
+    localStorage.setItem("ai_provider", provider);
+    
+    savedApiKey = key;
+    savedProvider = provider;
+    
+    onboardingModal.classList.add("hidden");
+    loadSessions();
+  } catch (err) {
+    errorDiv.textContent = err.message;
+    errorDiv.classList.remove("hidden");
+  } finally {
+    startChatBtn.disabled = false;
+    btnText.textContent = "Start Chatting";
+    spinner.classList.add("hidden");
+  }
 });
 
 function initOnboarding() {
