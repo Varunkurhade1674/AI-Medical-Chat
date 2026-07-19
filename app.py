@@ -116,7 +116,8 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
     if not payload.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
-    previous_messages = list(session.messages)
+    # Extract data into simple dicts to avoid SQLAlchemy DetachedInstanceErrors during streaming
+    previous_messages = [{"role": m.role, "message": m.message} for m in session.messages]
 
     # Save the user's message immediately so it isn't lost if the stream breaks
     db.add(Message(session_id=session.id, role="user", message=payload.message))

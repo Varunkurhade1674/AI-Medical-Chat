@@ -21,7 +21,9 @@ def format_history_as_text(messages: list) -> str:
         
     formatted = []
     for msg in messages:
-        prefix = "Human: " if msg.role == "user" else "AI: "
-        formatted.append(f"{prefix}{msg.message}")
+        role = msg.get("role") if isinstance(msg, dict) else msg.role
+        text = msg.get("message") if isinstance(msg, dict) else msg.message
+        prefix = "Human: " if role == "user" else "AI: "
+        formatted.append(f"{prefix}{text}")
         
     return "\n".join(formatted)
