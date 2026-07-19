@@ -1,0 +1,3 @@
+
+
+⚠️ The AI service failed: API key is not set. Please provide it in the UI.

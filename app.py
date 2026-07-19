@@ -138,7 +138,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
         finally:
             if full_answer:
                 # Save the fully generated response to the database
-                db.add(Message(session_id=session.id, role="assistant", message=full_answer))
+                db.add(Message(session_id=payload.session_id, role="assistant", message=full_answer))
                 db.commit()
 
     return StreamingResponse(stream_generator(), media_type="text/plain")
