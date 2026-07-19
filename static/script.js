@@ -6,6 +6,7 @@ const chatWindow = document.getElementById("chatWindow");
 const sessionList = document.getElementById("sessionList");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
+const micBtn = document.getElementById("micBtn");
 const newChatBtn = document.getElementById("newChatBtn");
 const typingIndicator = document.getElementById("typingIndicator");
 const chatTitle = document.getElementById("chatTitle");
@@ -139,6 +140,27 @@ function appendMessage(role, text) {
   });
 
   bubble.appendChild(textSpan);
+  
+  let speakBtn = null;
+  if (role === "assistant") {
+    speakBtn = document.createElement("button");
+    speakBtn.className = "speak-btn";
+    speakBtn.textContent = "Speak";
+    speakBtn.addEventListener("click", () => {
+      // Toggle speech
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        speakBtn.textContent = "Speak";
+      } else {
+        const utterance = new SpeechSynthesisUtterance(textSpan.textContent);
+        utterance.onend = () => (speakBtn.textContent = "Speak");
+        window.speechSynthesis.speak(utterance);
+        speakBtn.textContent = "Stop";
+      }
+    });
+    bubble.appendChild(speakBtn);
+  }
+  
   bubble.appendChild(copyBtn);
   row.appendChild(avatar);
   row.appendChild(bubble);
@@ -332,6 +354,70 @@ function initOnboarding() {
   } else {
     loadSessions();
   }
+}
+
+// ---------------------------------------------------------------------------
+// Speech-to-Text Logic
+// ---------------------------------------------------------------------------
+
+let recognition = null;
+let isRecording = false;
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  
+  recognition.onstart = () => {
+    isRecording = true;
+    micBtn.classList.add("recording");
+    messageInput.placeholder = "Listening...";
+  };
+
+  recognition.onresult = (event) => {
+    let finalTranscript = '';
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      }
+    }
+    if (finalTranscript) {
+      const currentText = messageInput.value;
+      messageInput.value = currentText ? currentText + ' ' + finalTranscript : finalTranscript;
+      autoResize();
+    }
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error", event.error);
+    stopRecording();
+  };
+
+  recognition.onend = () => {
+    stopRecording();
+  };
+}
+
+function stopRecording() {
+  isRecording = false;
+  micBtn.classList.remove("recording");
+  messageInput.placeholder = "Type your health question here...";
+  if (recognition) recognition.stop();
+}
+
+if (micBtn) {
+  micBtn.addEventListener("click", () => {
+    if (!recognition) {
+      alert("Speech recognition is not supported in this browser. Try Chrome or Edge.");
+      return;
+    }
+    if (isRecording) {
+      stopRecording();
+    } else {
+      recognition.start();
+    }
+  });
 }
 
 // ---------------------------------------------------------------------------
