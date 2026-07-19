@@ -81,3 +81,20 @@ def generate_response(question: str, previous_messages: list, api_key: str | Non
         raise RuntimeError(f"The AI service failed to respond: {exc}") from exc
 
     return answer.strip()
+
+
+def generate_response_stream(question: str, previous_messages: list, api_key: str | None = None, provider: str = "groq"):
+    """
+    Run the chain and yield the response token by token as a stream.
+    """
+    memory = build_memory_from_history(previous_messages)
+    chat_history_text = format_history_as_text(memory)
+
+    chain = build_chain(api_key, provider)
+
+    try:
+        # We use .stream() instead of .invoke()
+        for chunk in chain.stream({"chat_history": chat_history_text, "question": question}):
+            yield chunk
+    except Exception as exc:
+        raise RuntimeError(f"The AI service failed to respond: {exc}") from exc

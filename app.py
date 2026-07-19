@@ -11,7 +11,7 @@ Routes:
 """
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from database.database import init_db, get_db
 from database.models import ChatSession, Message
-from chains.chat_chain import generate_response, get_llm
+from chains.chat_chain import generate_response, get_llm, generate_response_stream
 
 load_dotenv()
 
@@ -118,24 +118,29 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
 
     previous_messages = list(session.messages)
 
-    try:
-        answer = generate_response(payload.message, previous_messages, payload.api_key, payload.provider)
-    except RuntimeError as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
-
-    db.add_all(
-        [
-            Message(session_id=session.id, role="user", message=payload.message),
-            Message(session_id=session.id, role="assistant", message=answer),
-        ]
-    )
-
+    # Save the user's message immediately so it isn't lost if the stream breaks
+    db.add(Message(session_id=session.id, role="user", message=payload.message))
     if session.title == "New Conversation":
         session.title = payload.message[:50]
-
     db.commit()
 
-    return {"answer": answer}
+    def stream_generator():
+        full_answer = ""
+        try:
+            for chunk in generate_response_stream(payload.message, previous_messages, payload.api_key, payload.provider):
+                full_answer += chunk
+                yield chunk
+        except Exception as exc:
+            error_msg = f"\n\n⚠️ The AI service failed: {str(exc)}"
+            full_answer += error_msg
+            yield error_msg
+        finally:
+            if full_answer:
+                # Save the fully generated response to the database
+                db.add(Message(session_id=session.id, role="assistant", message=full_answer))
+                db.commit()
+
+    return StreamingResponse(stream_generator(), media_type="text/plain")
 
 
 if __name__ == "__main__":

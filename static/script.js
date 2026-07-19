@@ -124,21 +124,27 @@ function appendMessage(role, text) {
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.textContent = text;
+
+  const textSpan = document.createElement("span");
+  textSpan.className = "message-text";
+  textSpan.textContent = text;
 
   const copyBtn = document.createElement("button");
   copyBtn.className = "copy-btn";
   copyBtn.textContent = "Copy";
   copyBtn.addEventListener("click", () => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(textSpan.textContent);
     copyBtn.textContent = "Copied!";
     setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
   });
 
+  bubble.appendChild(textSpan);
   bubble.appendChild(copyBtn);
   row.appendChild(avatar);
   row.appendChild(bubble);
   chatWindow.appendChild(row);
+  
+  return { textSpan, copyBtn };
 }
 
 async function sendMessage() {
@@ -168,8 +174,34 @@ async function sendMessage() {
       throw new Error(err.detail || "Something went wrong.");
     }
 
-    const data = await res.json();
-    appendMessage("assistant", data.answer);
+    // Hide the static "typing" indicator instantly since we're going to stream
+    setSending(false);
+
+    // Create an empty assistant bubble
+    const { textSpan, copyBtn } = appendMessage("assistant", "");
+    
+    // Read the stream
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let fullAnswer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      fullAnswer += chunk;
+      
+      // Update the UI
+      textSpan.textContent = fullAnswer;
+      scrollToBottom();
+    }
+    
+    // Update the copy button event listener to copy the newly completed text
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(fullAnswer);
+    });
+
     loadSessions(); // refresh title if it was auto-generated
   } catch (err) {
     appendMessage("assistant", `⚠️ ${err.message}`);
